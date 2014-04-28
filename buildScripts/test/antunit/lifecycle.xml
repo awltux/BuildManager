@@ -1,0 +1,13 @@
+<project basedir=".">
+	<target name="setUp">
+		<echo>setup</echo>
+	</target>
+
+	<target name="test1">
+		<echo>test1</echo>
+	</target>
+
+	<target name="tearDown">
+		<echo>tearDown</echo>
+	</target>
+</project>

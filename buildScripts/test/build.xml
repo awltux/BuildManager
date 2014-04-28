@@ -1,0 +1,15 @@
+<project basedir=".">
+	<property name="build_test_lib_dir" value="${basedir}/lib" />
+	
+	<echo message="${build_test_lib_dir}" />
+	<taskdef resource="org/apache/ant/antunit/antlib.xml">
+		<classpath>
+			<pathelement location="${build_test_lib_dir}/ant-antunit.jar"/>
+		</classpath>
+	</taskdef>
+	
+	<antunit>
+		<file file="antunit/lifecycle.xml"/>
+		<plainlistener/>
+    </antunit>
+</project>
