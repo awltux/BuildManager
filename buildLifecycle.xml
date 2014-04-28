@@ -1,0 +1,440 @@
+<project default="package" xmlns:ivy="antlib:org.apache.ivy.ant">
+	<echo message="${ant.version}" />
+	<echo message="This build script was written using v1.9.3" />
+	<!--
+		ALL BUILD IMPLEMENT THE SAME LIFECYCLE!
+		THIS PROVIDES A CONSISTEMT INTERFACE TO THE END USER.
+		Standard build lifecycle based on maven phases: 
+			http://maven.apache.org/guides/introduction/introduction-to-the-lifecycle.html#Lifecycle_Reference 
+		USAGE:
+			Include this build file in a project and define macrodefs to implement the targets that are required to do something.
+			Many of the targets have default macrodefs defined in this file, making the build.xml file 
+		DEFAULT_MACRODEFS:
+			A set of default macros can be used in the suer defined macros. Minimal effort is required to create a new build.
+		TESTING: 
+			All operations are inside macrodefs. This makes testing the build scripts easier with antunit.
+	-->
+
+	<property environment="env" />
+	
+	<fail unless="ant.project.name" message="Set the name property for ant &lt;project&gt;. This will be used as the project.artifactId" />
+	<fail unless="project.groupId" message="Missing property: project.groupId" />
+	<fail message="Misconfigured property: commonBuildScriptsDir" >
+		<condition>
+			<and>
+				<not>
+					<isset property="commonBuildScriptsDir" />
+				</not>
+				<available file="${commonBuildScriptsDir}/buildLifecycle.xml" />
+			</and>
+		</condition>
+	</fail>
+
+	<property name="env.WORKSPACE" value="${basedir}/.." />
+	<property name="project.workspace" value="${env.WORKSPACE}" />
+	
+	<property name="project.version.major" value="0" />
+	<property name="project.version.minor" value="0" />
+
+	<!-- Set the default if JENKINS hasnt been used -->
+	<property name="env.BUILD_NUMBER" value="0" />
+	<property name="project.version.buildNumber" value="${env.BUILD_NUMBER}" />
+	<property name="project.version" value="${project.version.major}.${project.version.minor}.${project.version.buildNumber}" />
+
+	<property name="project.basedir" value="${basedir}" />
+	<property name="project.artifactId" value="${ant.project.name}" />
+	<property name="project.packaging" value="jar" />
+	<property name="project.artifactId" value="${ant.project.name}" />
+	<property name="project.build.directory" value="${project.basedir}/target" />
+	<property name="project.build.lib" value="${project.basedir}/lib" />
+	<property name="project.build.classpath" value="${java.class.path}" />
+	<property name="project.build.testClasspath" value="${java.class.path}" />
+	<property name="project.build.java.debug" value="false" />
+	<property name="project.build.java.sourceVersion" value="1.7" />
+	<property name="project.build.releaseDir" value="${project.workspace}/releaseFolder" />
+	<property name="project.build.depencenciesDir" value="${project.build.directory}/lib" />
+	<property name="project.build.outputDirectory" value="${project.build.directory}/classes" />
+	<property name="project.build.docsApiDirectory" value="${project.build.directory}/docs/api" />
+	<property name="project.build.finalName" value="${project.artifactId}-${project.version}" />
+	<property name="project.build.testOutputDirectory" value="${project.build.directory}/test-classes" />
+	<property name="project.build.testClassPathId" value="testClassPathId" />
+	<property name="project.build.testReportDirectory" value="${project.build.directory}/test-reports" />
+	<property name="project.build.sourceDirectory" value="${project.basedir}/src/main/java" />
+	<property name="project.build.testSourceDirectory" value="${project.basedir}/src/test/java" />
+	<property name="project.build.resourcesDirectory" value="${project.basedir}/src/main/resources" />
+	<property name="project.build.testResourcesDirectory" value="${project.basedir}/src/test/resources" />
+	<property name="project.build.extendedPackagingPathId" value="extendedPackagingPathId" />
+
+	<fail message="Set the basedir property for the ant &lt;project&gt; to something buildable" >
+		<condition>
+			<and>
+				<not>
+					<available file="${project.build.sourceDirectory}" type="dir" />
+				</not>
+				<not>
+					<available file="${project.build.resourcesDirectory}" type="dir" />
+				</not>
+			</and>
+		</condition>
+	</fail>
+
+	<path id="commonBuildScripts.lib.path">
+		<fileset dir="${commonBuildScriptsDir}/lib" includes="*.jar"/>
+	</path>
+	
+	<condition property="found-validate" >
+		<typefound name="validate" />
+	</condition>
+	<target name="validate" if="found-validate" 
+		description="Validate the project is correct and all necessary information is available." >
+		<validate />
+	</target>
+	
+	<condition property="found-initialize" >
+		<typefound name="initialize" />
+	</condition>
+	<target name="initialize" if="found-initialize" depends="validate" 
+		description="initialize build state, e.g. set properties or create directories." >
+		<initialize />
+	</target>
+	
+	<condition property="found-generate-sources" >
+		<typefound name="generate-sources" />
+	</condition>
+	<target name="generate-sources" if="found-generate-sources" depends="initialize" 
+		description="generate any source code for inclusion in compilation." >
+		<generate-sources />
+	</target>
+	
+	<condition property="found-process-sources" >
+		<typefound name="process-sources" />
+	</condition>
+	<target name="process-sources" if="found-process-sources" depends="generate-sources" 
+		description="process the source code, for example to filter any values." >
+		<process-sources />
+	</target>
+	
+	<condition property="found-generate-resources" >
+		<typefound name="generate-resources" />
+	</condition>
+	<target name="generate-resources" if="found-generate-resources" depends="process-sources" 
+		description="generate resources for inclusion in the package." >
+		<generate-resources />
+	</target>
+	
+	<condition property="found-process-resources" >
+		<typefound name="process-resources" />
+	</condition>
+	<target name="process-resources" if="found-process-resources" depends="generate-resources" 
+		description="copy and process the resources into the destination directory, ready for packaging." >
+		<process-resources />
+	</target>
+	
+	<condition property="found-compile" >
+		<typefound name="compile" />
+	</condition>
+	<target name="compile" if="found-compile" depends="process-resources" 
+		description="compile the source code of the project." >
+		<compile />
+	</target>
+	
+	<condition property="found-process-classes" >
+		<typefound name="process-classes" />
+	</condition>
+	<target name="process-classes" if="found-process-classes" depends="compile" 
+		description="post-process the generated files from compilation, for example to do bytecode enhancement on Java classes." >
+		<process-classes />
+	</target>
+	
+	<condition property="found-generate-test-sources" >
+		<typefound name="generate-test-sources" />
+	</condition>
+	<target name="generate-test-sources" if="found-generate-test-sources" depends="process-classes" 
+		description="generate any test source code for inclusion in compilation." >
+		<generate-test-sources />
+	</target>
+	
+	<condition property="found-process-test-sources" >
+		<typefound name="process-test-sources" />
+	</condition>
+	<target name="process-test-sources" if="found-process-test-sources" depends="generate-test-sources" 
+		description="process the test source code, for example to filter any values." >
+		<process-test-sources />
+	</target>
+	
+	<condition property="found-generate-test-resources" >
+		<typefound name="generate-test-resources" />
+	</condition>
+	<target name="generate-test-resources" if="found-generate-test-resources" depends="process-test-sources" 
+		description="create resources for testing." >
+		<generate-test-resources />
+	</target>
+	
+	<condition property="found-process-test-resources" >
+		<typefound name="process-test-resources" />
+	</condition>
+	<target name="process-test-resources" if="found-process-test-resources" depends="generate-test-resources" 
+		description="copy and process the resources into the test destination directory." >
+		<process-test-resources />
+	</target>
+	
+	<condition property="found-test-compile" >
+		<typefound name="test-compile" />
+	</condition>
+	<target name="test-compile" if="found-test-compile" depends="process-test-resources" 
+		description="compile the test source code into the test destination directory" >
+		<test-compile />
+	</target>
+	
+	<condition property="found-process-test-classes" >
+		<typefound name="process-test-classes" />
+	</condition>
+	<target name="process-test-classes" if="found-process-test-classes" depends="test-compile" 
+		description="post-process the generated files from test compilation, for example to do bytecode enhancement on Java classes. For Maven 2.0.5 and above." >
+		<process-test-classes />
+	</target>
+	
+	<condition property="found-test" >
+		<typefound name="test" />
+	</condition>
+	<target name="test" if="found-test" depends="process-test-classes" 
+		description="run tests using a suitable unit testing framework. These tests should not require the code be packaged or deployed." >
+		<test />
+	</target>
+	
+	<condition property="found-prepare-package" >
+		<typefound name="prepare-package" />
+	</condition>
+	<target name="prepare-package" if="found-prepare-package" depends="test" 
+		description="perform any operations necessary to prepare a package before the actual packaging. This often results in an unpacked, processed version of the package." >
+		<prepare-package />
+	</target>
+	
+	<condition property="found-package" >
+		<typefound name="package" />
+	</condition>
+	<target name="package" if="found-package" depends="prepare-package" 
+		description="take the compiled code and package it in its distributable format, such as a JAR." >
+		<package />
+	</target>
+	
+	<condition property="found-pre-integration-test" >
+		<typefound name="pre-integration-test" />
+	</condition>
+	<target name="pre-integration-test" if="found-pre-integration-test" depends="package" 
+		description="perform actions required before integration tests are executed. This may involve things such as setting up the required environment." >
+		<pre-integration-test />
+	</target>
+	
+	<condition property="found-integration-test" >
+		<typefound name="integration-test" />
+	</condition>
+	<target name="integration-test" if="found-integration-test" depends="pre-integration-test" 
+		description="process and deploy the package if necessary into an environment where integration tests can be run." >
+		<integration-test />
+	</target>
+	
+	<condition property="found-post-integration-test" >
+		<typefound name="post-integration-test" />
+	</condition>
+	<target name="post-integration-test" if="found-post-integration-test" depends="integration-test" 
+		description="perform actions required after integration tests have been executed. This may including cleaning up the environment." >
+		<post-integration-test />
+	</target>
+	
+	<condition property="found-verify" >
+		<typefound name="verify" />
+	</condition>
+	<target name="verify" if="found-verify" depends="post-integration-test" 
+		description="run any checks to verify the package is valid and meets quality criteria." >
+		<verify />
+	</target>
+	
+	<condition property="found-install" >
+		<typefound name="install" />
+	</condition>
+	<target name="install" if="found-install" depends="verify" 
+		description="install the package into the local repository, for use as a dependency in other projects locally." >
+		<install />
+	</target>
+	
+	<condition property="found-deploy" >
+		<typefound name="deploy" />
+	</condition>
+	<target name="deploy" if="found-deploy" depends="install" 
+		description="done in an integration or release environment, copies the final package to the remote repository for sharing with other developers and projects." >
+		<deploy />
+	</target>
+	
+	<condition property="found-pre-clean" >
+		<typefound name="pre-clean" />
+	</condition>
+	<target name="pre-clean" if="found-pre-clean" >
+		<pre-clean />
+	</target>
+	
+	<condition property="found-clean" >
+		<typefound name="clean" />
+	</condition>
+	<target name="clean" if="found-clean" depends="pre-clean" >
+		<clean />
+	</target>
+	
+	
+	<!-- DEFAULT MACRODEFS -->
+	
+	<macrodef name="initialize_default" >
+		<sequential>
+			<mkdir dir="${project.build.outputDirectory}" />
+			<mkdir dir="${project.build.testOutputDirectory}" />
+			<mkdir dir="${project.build.testReportDirectory}" />
+			<mkdir dir="${project.build.docsApiDirectory}" />
+			<mkdir dir="${project.build.depencenciesDir}" />
+		</sequential>
+	</macrodef>
+	
+	<macrodef name="compile_default" >
+		<attribute name="srcDir" default="${project.build.sourceDirectory}" />
+		<attribute name="destdir" default="${project.build.outputDirectory}" />
+		<attribute name="classpath" default="${project.build.classpath}" />
+		<attribute name="javaDebug" default="${project.build.java.debug}" />
+		<attribute name="javaSourceVersion" default="${project.build.java.sourceVersion}" />
+		<sequential>
+			<!-- Assumes that srcdir exists! -->
+			<javac 	srcdir="@{srcdir}"
+					 destdir="@{destdir}"
+					 classpath="@{classpath}"
+					 debug="@{javaDebug}"
+					 source="@{javaSourceVersion}"
+					 includeAntRuntime="false"
+			  />			
+		</sequential>
+	</macrodef>
+	
+	<macrodef name="test-compile_default" >
+		<attribute name="srcDir" default="${project.build.testSourceDirectory}" />
+		<attribute name="destdir" default="${project.build.testOutputDirectory}" />
+		<attribute name="javaDebug" default="${project.build.java.debug}" />
+		<attribute name="javaSourceVersion" default="${project.build.java.sourceVersion}" />
+		<sequential>
+			<path id="testClasspath" >
+				<pathelement path="${project.build.classpath}" />
+				<pathelement location="${project.build.outputDirectory}" />
+				<fileset dir="${project.build.lib}/test" >
+					<include name="*.jar" />
+				</fileset>
+			</path>
+		
+			<!-- Assumes that srcdir exists! -->
+			<javac srcdir="@{srcDir}"
+					 destdir="@{destdir}"
+					 debug="@{javaDebug}"
+					 source="@{javaSourceVersion}"
+					 includeAntRuntime="false" >
+				<classpath refid="testClasspath" />
+			</javac>
+			
+		</sequential>
+	</macrodef>
+	
+	<macrodef name="test_default" >
+		<attribute name="testReportDir" default="${project.build.testReportDirectory}" />
+		<attribute name="testSrcDir" default="${project.build.testSourceDirectory}" />
+		<attribute name="classpathId" default="${project.build.testClassPathId}" />
+		<sequential>
+			<path id="@{classpathId}" >
+				<pathelement path="${project.build.classpath}" />
+				<pathelement location="${project.build.outputDirectory}" />
+				<pathelement location="${project.build.testOutputDirectory}"/>
+				<fileset dir="${project.build.lib}/test" >
+					<include name="*.jar" />
+				</fileset>
+				<fileset dir="${commonBuildScriptsDir}/lib/test" >
+					<include name="*.jar" />
+				</fileset>
+			</path>
+			<junit printsummary="yes" fork="yes" haltonfailure="false" failureproperty="unitTest.failed">
+				<classpath refid="@{classpathId}" />
+				<formatter type="xml"/>
+
+				<batchtest fork="yes" todir="@{testReportDir}">
+					<fileset dir="@{testSrcDir}" includes="**/*Test*.java" />
+				</batchtest>
+			</junit>
+			<fail message="Test failure detected, check test results." if="unitTest.failed" />
+		</sequential>
+	</macrodef>
+	
+	<macrodef name="prepare-package_default" >
+		<attribute name="docsApiDir" default="${project.build.docsApiDirectory}" />
+		<attribute name="sourceDir" default="${project.build.sourceDirectory}" />
+		<sequential>
+			<path id="@{extendedPathId}" />
+			<!-- Assumes that ${project.build.resourcesDirectory} exists! -->
+			<javadoc
+					   destdir="@{docsApiDir}"
+					   author="true"
+					   version="true"
+					   use="true"
+					   windowtitle="${ant.project.name}">
+
+				<fileset dir="@{sourceDir}" defaultexcludes="yes">
+				  <include name="**/*.java"/>
+				</fileset>
+			</javadoc>
+		</sequential>
+	</macrodef>
+	
+	<macrodef name="package_jar" >
+		<attribute name="destFile" default="${project.build.directory}/${project.build.finalName}.jar" />
+		<attribute name="classesDir" default="${project.build.outputDirectory}" />
+		<attribute name="resourcesDir" default="${project.build.resourcesDirectory}" />
+		<attribute name="extendedPathId" default="${project.build.extendedPackagingPathId}" />
+		<sequential>
+			<path id="@{extendedPathId}" />
+			<!-- Assumes that ${project.build.resourcesDirectory} exists! -->
+			<jar destfile="@{destFile}">
+				<fileset dir="@{classesDir}"	/>
+				<fileset dir="@{resourcesDir}"/>
+				<path refid="@{extendedPathId}" />
+			</jar>			
+		</sequential>
+	</macrodef>
+	
+	<macrodef name="package_war" >
+		<attribute name="destFile" default="${project.build.directory}/${project.build.finalName}.war" />
+		<attribute name="classesDir" default="${project.build.outputDirectory}" />
+		<attribute name="resourcesDir" default="${project.build.resourcesDirectory}" />
+		<attribute name="libDir" default="${project.build.depencenciesDir}" />
+		<attribute name="extendedPathId" default="${project.build.extendedPackagingPathId}" />
+		<sequential>
+			<path id="@{extendedPathId}" />
+			<!-- Assumes that ${project.build.resourcesDirectory} exists! -->
+			<war destfile="@{destFile}">
+				<classes dir="@{classesDir}" />
+				<fileset dir="@{resourcesDir}"/>
+				<path refid="@{extendedPathId}" />
+				<lib dir="@{libDir}" />
+			</war>			
+		</sequential>
+	</macrodef>
+	
+	<macrodef name="deploy_default" >
+		<attribute name="buildArtifact" default="${project.build.directory}/${project.build.finalName}.war" />
+		<attribute name="releaseDir" default="${project.build.releaseDir}" />
+		<sequential>
+			<!-- I would normally use Nexus to store release files, but a release directory could be mounted locally. -->
+			<copy file="@{buildArtifact}" todir="@{releaseDir}" />			
+		</sequential>
+	</macrodef>
+	
+	<macrodef name="clean_default" >
+		<attribute name="targetDir" default="${project.build.directory}" />
+		<sequential>
+			<delete includeemptydirs="true" dir="@{targetDir}" />
+		</sequential>
+	</macrodef>
+	
+	
+</project>
+
