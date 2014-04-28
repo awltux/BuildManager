@@ -1,13 +1,16 @@
-<project basedir=".">
+<project >
 	<target name="setUp">
-		<echo>setup</echo>
+		<echo message="setup" />
 	</target>
 
-	<target name="test1">
+	<target name="test2">
 		<echo>test1</echo>
 	</target>
 
 	<target name="tearDown">
 		<echo>tearDown</echo>
+		<concat destfile="${basedir}/antunit.lifecycle.log" fixlastline="yes">
+			<logcontent/>
+		</concat>		
 	</target>
 </project>

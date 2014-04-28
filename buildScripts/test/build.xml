@@ -9,7 +9,7 @@
 	</taskdef>
 	
 	<antunit>
-		<file file="antunit/lifecycle.xml"/>
+		<file file="${basedir}/antunit/lifecycle.xml"/>
 		<plainlistener/>
     </antunit>
 </project>
